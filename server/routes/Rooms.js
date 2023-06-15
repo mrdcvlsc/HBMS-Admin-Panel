@@ -11,9 +11,13 @@ rooms.get('/test', checkAuth, (req, res) => {
 // Define the route handler for GET request
 rooms.get('/', (req, res) => {
   pool.execute(`
-  SELECT room_types.*, roomimages.room_url
+  SELECT room_types.*, roomimages.room_url, hotel_bookings.guest_name
   FROM room_types
   JOIN roomimages ON room_types.id = roomimages.room_type
+  LEFT JOIN hotel_bookings
+  ON CURRENT_DATE() >= hotel_bookings.check_in_date
+  AND CURRENT_DATE() <= hotel_bookings.check_out_date
+  AND room_types.id = hotel_bookings.room_type;
 `,
     (err, result) => {
       if (err) {
@@ -29,7 +33,7 @@ rooms.get('/', (req, res) => {
               id: row.id,
               name: row.room_type,
               amenities: row.amenities,
-              status: row.status,
+              status: row.guest_name ? 'booked' : 'available',
               price: row.price,
               bed_type: row.bed_type,
               images: []
